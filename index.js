@@ -12,12 +12,9 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.wapuj.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect(err => {
-  console.log('connection error', err)
+client.connect(err => {  
   const itemCollection = client.db(process.env.DB_NAME).collection("items");
-
-  console.log('connection successfully')
-  
+  const orderCollection = client.db(process.env.DB_NAME).collection("orders");  
 
   app.get('/products', (req, res) => {
     itemCollection.find({})
@@ -47,6 +44,21 @@ client.connect(err => {
     itemCollection.deleteOne({_id: ObjectId(id)})
     .then(result => {
       res.send(result.deletedCount > 0);
+    })
+  })
+
+  app.post('/addOrder', (req, res) => {
+    const orderProduct = req.body;
+    orderCollection.insertOne(orderProduct)
+    .then(result => {
+      res.send(result.insertedCount > 0)
+    })
+  })
+
+  app.get('/showOrders', (req, res)=> {
+    orderCollection.find({email: req.query.email})
+    .toArray((err, documents)=>{
+      res.send(documents);
     })
   })
 
